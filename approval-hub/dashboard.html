@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approval Hub</title>
+    <style>
+        :root {
+            --color-primary        : #0C0C09;
+            --color-secondary      : #312C85;
+            --color-success        : #16A34A;
+            --color-warning        : #D97706;
+            --color-danger         : #DC2626;
+            --color-surface        : #F4F4F1;
+            --color-card           : #FFFFFF;
+            --color-on-primary     : #FFFFFF;
+            --color-text           : #0C0C09;
+            --color-text-secondary : #52525B;
+            --color-border         : #E4E4E7;
+            --color-border-strong  : #A1A1AA;
+
+            /* Status tints: the status colour at ~10% opacity over white */
+            --chip-success-bg   : rgba(22, 163, 74, 0.10);
+            --chip-warning-bg   : rgba(217, 119, 6, 0.10);
+            --chip-danger-bg    : rgba(220, 38, 38, 0.10);
+            --chip-secondary-bg : rgba(49, 44, 133, 0.10);
+            --chip-neutral-bg   : rgba(82, 82, 91, 0.10);
+
+            /* Hover tint derived from the primary colour */
+            --color-primary-hover : rgba(12, 12, 9, 0.85);
+
+            --spacing-panel : 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin          : 0;
+            background      : var(--color-surface);
+            color           : var(--color-text);
+            font-family     : -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size       : 14px;
+            line-height     : 1.5;
+        }
+
+        /* Shared keyboard focus indicator */
+        button:focus-visible,
+        a:focus-visible,
+        [tabindex]:focus-visible {
+            outline         : 2px solid var(--color-secondary);
+            outline-offset  : 2px;
+        }
+
+        /* App Bar */
+        .app-bar {
+            background      : var(--color-card);
+            border-bottom   : 1px solid var(--color-border);
+            position        : sticky;
+            top             : 0;
+            z-index         : 20;
+        }
+
+        .app-bar-inner {
+            align-items     : center;
+            display         : flex;
+            gap             : 16px;
+            justify-content : space-between;
+            margin          : 0 auto;
+            max-width       : 1060px;
+            padding         : 16px 24px;
+            flex-wrap       : wrap;
+        }
+
+        .app-bar-heading {
+            min-width       : 240px;
+        }
+
+        .page-title {
+            margin          : 0;
+            font-size       : 28px;
+            font-weight     : 600;
+            line-height     : 1.2;
+        }
+
+        .page-subtitle {
+            margin-top      : 4px;
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+        }
+
+        .app-bar-actions {
+            align-items     : center;
+            display         : flex;
+            gap             : 12px;
+        }
+
+        .connection-badge {
+            align-items     : center;
+            border          : 1px solid var(--color-border);
+            border-radius   : 999px;
+            display         : inline-flex;
+            font-size       : 12px;
+            font-weight     : 600;
+            gap             : 4px;
+            padding         : 4px 12px;
+            white-space     : nowrap;
+        }
+
+        .connection-dot {
+            border-radius   : 999px;
+            height          : 8px;
+            width           : 8px;
+        }
+
+        .connection-badge-connected {
+            background      : var(--chip-success-bg);
+            color           : var(--color-success);
+        }
+
+        .connection-badge-connected .connection-dot {
+            background      : var(--color-success);
+        }
+
+        .connection-badge-offline {
+            background      : var(--chip-warning-bg);
+            color           : var(--color-warning);
+        }
+
+        .connection-badge-offline .connection-dot {
+            background      : var(--color-warning);
+        }
+
+        .connection-badge-connecting {
+            background      : var(--color-card);
+            color           : var(--color-text-secondary);
+        }
+
+        .connection-badge-connecting .connection-dot {
+            background      : var(--color-text-secondary);
+        }
+
+        .sync-button {
+            background      : var(--color-primary);
+            border          : 1px solid var(--color-primary);
+            border-radius   : 8px;
+            color           : var(--color-on-primary);
+            cursor          : pointer;
+            font            : inherit;
+            font-weight     : 600;
+            min-height      : 32px;
+            padding         : 8px 16px;
+        }
+
+        .sync-button:hover {
+            background      : var(--color-primary-hover);
+        }
+
+        .sync-button:disabled {
+            cursor          : not-allowed;
+            opacity         : 0.45;
+        }
+
+        .inline-status-message {
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+            margin          : 0 auto;
+            max-width       : 1060px;
+            padding         : 0 24px 12px;
+        }
+
+        /* Page container */
+        .approval-hub {
+            max-width       : 1060px;
+            margin          : 0 auto;
+            padding         : 32px 24px 64px;
+        }
+
+        /* Statistics */
+        .statistics-section {
+            margin-bottom   : 32px;
+        }
+
+        .stat-card-row {
+            display         : grid;
+            gap             : 12px;
+            grid-template-columns : repeat(5, minmax(0, 1fr));
+        }
+
+        .stat-card {
+            background      : var(--color-card);
+            border          : 1px solid var(--color-border);
+            border-radius   : 10px;
+            padding         : 16px;
+        }
+
+        .stat-card-label {
+            color           : var(--color-text-secondary);
+            display         : block;
+            font-size       : 11px;
+            font-weight     : 600;
+            letter-spacing  : 0.05em;
+            text-transform  : uppercase;
+        }
+
+        .stat-card-value {
+            display         : block;
+            font-size       : 28px;
+            font-weight     : 600;
+            font-variant-numeric : tabular-nums;
+            line-height     : 1.2;
+            margin-top      : 8px;
+        }
+
+        .stat-card-pending {
+            background      : var(--chip-warning-bg);
+        }
+
+        .stat-card-pending .stat-card-value {
+            color           : var(--color-warning);
+        }
+
+        .stat-card-approved {
+            background      : var(--chip-success-bg);
+        }
+
+        .stat-card-approved .stat-card-value {
+            color           : var(--color-success);
+        }
+
+        .stat-card-rejected {
+            background      : var(--chip-danger-bg);
+        }
+
+        .stat-card-rejected .stat-card-value {
+            color           : var(--color-danger);
+        }
+
+        .stat-card-rate {
+            background      : var(--chip-secondary-bg);
+        }
+
+        .stat-card-rate .stat-card-value {
+            color           : var(--color-secondary);
+        }
+
+        .status-split-panel {
+            background      : var(--color-card);
+            border          : 1px solid var(--color-border);
+            border-radius   : 10px;
+            margin-top      : 12px;
+            padding         : 16px;
+        }
+
+        .status-split-bar {
+            background      : var(--color-surface);
+            border-radius   : 999px;
+            display         : flex;
+            gap             : 2px;
+            height          : 8px;
+            overflow        : hidden;
+        }
+
+        .status-split-segment {
+            height          : 100%;
+        }
+
+        .status-split-segment-pending {
+            background      : var(--color-warning);
+        }
+
+        .status-split-segment-approved {
+            background      : var(--color-success);
+        }
+
+        .status-split-segment-rejected {
+            background      : var(--color-danger);
+        }
+
+        .status-split-legend {
+            display         : flex;
+            flex-wrap       : wrap;
+            gap             : 16px;
+            margin-top      : 8px;
+        }
+
+        .legend-item {
+            align-items     : center;
+            color           : var(--color-text-secondary);
+            display         : inline-flex;
+            font-size       : 12px;
+            gap             : 8px;
+        }
+
+        .legend-dot {
+            border-radius   : 999px;
+            height          : 8px;
+            width           : 8px;
+        }
+
+        .legend-dot-pending {
+            background      : var(--color-warning);
+        }
+
+        .legend-dot-approved {
+            background      : var(--color-success);
+        }
+
+        .legend-dot-rejected {
+            background      : var(--color-danger);
+        }
+
+        /* Panel */
+        .approval-hub .panel {
+            background      : var(--color-card);
+            border          : 1px solid var(--color-border);
+            border-radius   : 10px;
+            padding         : var(--spacing-panel);
+            margin-bottom   : 24px;
+        }
+
+        .approval-hub .panel-header {
+            display         : flex;
+            align-items     : center;
+            justify-content : space-between;
+            flex-wrap       : wrap;
+            gap             : 12px;
+            margin-bottom   : 16px;
+        }
+
+        .approval-hub .panel-title {
+            margin          : 0;
+            font-size       : 16px;
+            font-weight     : 600;
+            line-height     : 1.2;
+        }
+
+        .approval-hub .panel-purpose {
+            color           : var(--color-text-secondary);
+            display         : block;
+            font-size       : 12px;
+            margin-top      : 4px;
+        }
+
+        /* Filter */
+        .approval-hub .status-filter {
+            display         : flex;
+            gap             : 8px;
+        }
+
+        .approval-hub .status-filter-button {
+            border          : 1px solid var(--color-border);
+            border-radius   : 999px;
+            background      : var(--color-card);
+            color           : var(--color-text-secondary);
+            cursor          : pointer;
+            font-size       : 12px;
+            min-height      : 32px;
+            padding         : 4px 16px;
+        }
+
+        .approval-hub .status-filter-button:hover {
+            border-color    : var(--color-border-strong);
+            color           : var(--color-text);
+        }
+
+        .approval-hub .status-filter-button.is-active {
+            background      : var(--color-primary);
+            border-color    : var(--color-primary);
+            color           : var(--color-on-primary);
+        }
+
+        /* Request cards */
+        .approval-hub .request-list {
+            display         : flex;
+            flex-direction  : column;
+            gap             : 12px;
+        }
+
+        .approval-hub .request-card {
+            border          : 1px solid var(--color-border);
+            border-radius   : 10px;
+            padding         : 16px;
+            cursor          : pointer;
+            background      : var(--color-card);
+            transition      : background 120ms ease, border-color 120ms ease;
+        }
+
+        .approval-hub .request-card:hover {
+            background      : var(--color-surface);
+            border-color    : var(--color-border-strong);
+        }
+
+        .approval-hub .request-card:focus-visible {
+            outline         : 2px solid var(--color-secondary);
+            outline-offset  : 2px;
+        }
+
+        .approval-hub .request-card.is-selected {
+            border-color    : var(--color-border-strong);
+            background      : var(--color-surface);
+        }
+
+        .approval-hub .request-card-top-row {
+            display         : flex;
+            align-items     : center;
+            justify-content : space-between;
+            gap             : 12px;
+        }
+
+        .approval-hub .request-type {
+            font-size       : 14px;
+            font-weight     : 600;
+        }
+
+        .approval-hub .request-card-actions {
+            align-items     : center;
+            display         : flex;
+            gap             : 8px;
+        }
+
+        .approval-hub .request-link {
+            align-items     : center;
+            color           : var(--color-secondary);
+            display         : inline-flex;
+            font-size       : 13px;
+            line-height     : 1;
+            min-height      : 32px;
+            text-decoration : none;
+        }
+
+        .approval-hub .request-link:hover {
+            text-decoration : underline;
+        }
+
+        .approval-hub .request-title {
+            font-size       : 14px;
+            font-weight     : 600;
+            margin-top      : 8px;
+        }
+
+        .approval-hub .request-meta {
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+            margin-top      : 4px;
+            overflow-wrap   : anywhere;
+        }
+
+        /* Chips */
+        .approval-hub .chip {
+            display         : inline-block;
+            border-radius   : 999px;
+            font-size       : 11px;
+            font-weight     : 600;
+            padding         : 4px 12px;
+            white-space     : nowrap;
+        }
+
+        .approval-hub .chip-status-pending {
+            background      : var(--chip-warning-bg);
+            color           : var(--color-warning);
+        }
+
+        .approval-hub .chip-status-approved {
+            background      : var(--chip-success-bg);
+            color           : var(--color-success);
+        }
+
+        .approval-hub .chip-status-rejected {
+            background      : var(--chip-danger-bg);
+            color           : var(--color-danger);
+        }
+
+        .approval-hub .chip-risk-low {
+            background      : var(--chip-success-bg);
+            color           : var(--color-success);
+        }
+
+        .approval-hub .chip-risk-medium {
+            background      : var(--chip-warning-bg);
+            color           : var(--color-warning);
+        }
+
+        .approval-hub .chip-risk-high {
+            background      : var(--chip-danger-bg);
+            color           : var(--color-danger);
+        }
+
+        /* No Data Row */
+        .approval-hub .no-data-row {
+            border          : 1px dashed var(--color-border);
+            border-radius   : 10px;
+            color           : var(--color-text-secondary);
+            padding         : 24px;
+            text-align      : center;
+        }
+
+        /* Request details */
+        .approval-hub .detail-summary {
+            font-weight     : 600;
+            font-size       : 16px;
+            line-height     : 1.2;
+        }
+
+        .approval-hub .detail-pr-link {
+            color           : var(--color-secondary);
+            display         : inline-block;
+            font-size       : 13px;
+            margin-top      : 8px;
+            text-decoration : none;
+        }
+
+        .approval-hub .detail-pr-link:hover {
+            text-decoration : underline;
+        }
+
+        .approval-hub .detail-meta-row {
+            display         : flex;
+            gap             : 8px;
+            align-items     : center;
+            flex-wrap       : wrap;
+            margin          : 12px 0;
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+        }
+
+        .approval-hub .detail-reason {
+            border-left     : 3px solid var(--color-border);
+            color           : var(--color-text);
+            margin          : 0 0 16px;
+            padding-left    : 12px;
+        }
+
+        .approval-hub .detail-label {
+            color           : var(--color-text-secondary);
+            display         : block;
+            font-size       : 11px;
+            font-weight     : 600;
+            letter-spacing  : 0.05em;
+            margin-bottom   : 8px;
+            text-transform  : uppercase;
+        }
+
+        .approval-hub .review-note-input {
+            border          : 1px solid var(--color-border);
+            border-radius   : 8px;
+            display         : block;
+            font            : inherit;
+            padding         : 8px 12px;
+            resize          : vertical;
+            width           : 100%;
+        }
+
+        .approval-hub .review-note-input:focus {
+            outline         : 2px solid var(--color-secondary);
+            outline-offset  : 2px;
+            border-color    : var(--color-border-strong);
+        }
+
+        /* Action Buttons */
+        .approval-hub .action-buttons {
+            display         : flex;
+            gap             : 12px;
+            margin-top      : 16px;
+        }
+
+        .approval-hub .button-approve {
+            background      : var(--color-primary);
+            border          : 1px solid var(--color-primary);
+            border-radius   : 8px;
+            color           : var(--color-on-primary);
+            cursor          : pointer;
+            font            : inherit;
+            font-weight     : 600;
+            min-height      : 32px;
+            padding         : 8px 16px;
+        }
+
+        .approval-hub .button-approve:hover {
+            background      : var(--color-primary-hover);
+        }
+
+        .approval-hub .button-reject {
+            background      : transparent;
+            border          : 1px solid var(--color-border-strong);
+            border-radius   : 8px;
+            color           : var(--color-text);
+            cursor          : pointer;
+            font            : inherit;
+            font-weight     : 600;
+            min-height      : 32px;
+            padding         : 8px 16px;
+        }
+
+        .approval-hub .button-reject:hover {
+            background      : var(--color-surface);
+            border-color    : var(--color-text-secondary);
+        }
+
+        .approval-hub .button-approve:disabled,
+        .approval-hub .button-reject:disabled {
+            cursor          : not-allowed;
+            opacity         : 0.45;
+        }
+
+        .approval-hub .decision-note {
+            background      : var(--chip-success-bg);
+            border          : 1px solid var(--color-border);
+            border-radius   : 8px;
+            color           : var(--color-text);
+            margin-top      : 12px;
+            padding         : 12px;
+        }
+
+        /* Audit timeline */
+        .approval-hub .audit-timeline {
+            display         : flex;
+            flex-direction  : column;
+            gap             : 0;
+            list-style      : none;
+            margin          : 0;
+            padding         : 0;
+        }
+
+        .approval-hub .audit-entry {
+            border-left     : 2px solid var(--color-border);
+            padding         : 0 0 16px 16px;
+            position        : relative;
+        }
+
+        .approval-hub .audit-entry:last-child {
+            padding-bottom  : 0;
+        }
+
+        .approval-hub .audit-entry-marker {
+            background      : var(--color-card);
+            border          : 2px solid var(--color-primary);
+            border-radius   : 999px;
+            height          : 10px;
+            left            : -6px;
+            position        : absolute;
+            top             : 4px;
+            width           : 10px;
+        }
+
+        .approval-hub .audit-entry-top-row {
+            align-items     : baseline;
+            display         : flex;
+            gap             : 8px;
+            flex-wrap       : wrap;
+        }
+
+        .approval-hub .audit-entry-time {
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+        }
+
+        .approval-hub .audit-entry-note {
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+            margin-top      : 4px;
+        }
+
+        /* Analytics */
+        .approval-hub .analytics-columns {
+            display         : grid;
+            gap             : 24px;
+            grid-template-columns : repeat(2, minmax(0, 1fr));
+        }
+
+        .approval-hub .analytics-chart-title {
+            font-size       : 14px;
+            font-weight     : 600;
+            margin          : 0 0 12px;
+        }
+
+        .approval-hub .analytics-chart-svg {
+            display         : block;
+            height          : auto;
+            width           : 100%;
+        }
+
+        .approval-hub .analytics-chart-svg text {
+            font-size       : 11px;
+        }
+
+        .approval-hub .analytics-empty-note {
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+            margin          : 0;
+        }
+
+        .approval-hub .sample-data-tag {
+            background      : var(--chip-warning-bg);
+            border          : 1px solid var(--color-border);
+            border-radius   : 999px;
+            color           : var(--color-warning);
+            font-size       : 11px;
+            font-weight     : 600;
+            padding         : 4px 12px;
+            white-space     : nowrap;
+        }
+
+        /* Milestones */
+        .approval-hub .milestone-row {
+            padding         : 16px 0;
+        }
+
+        .approval-hub .milestone-row:first-child {
+            padding-top     : 4px;
+        }
+
+        .approval-hub .milestone-row + .milestone-row {
+            border-top      : 1px solid var(--color-border);
+        }
+
+        .approval-hub .milestone-top-row {
+            align-items     : baseline;
+            display         : flex;
+            flex-wrap       : wrap;
+            gap             : 8px 12px;
+            justify-content : space-between;
+        }
+
+        .approval-hub .milestone-title {
+            font-size       : 14px;
+            font-weight     : 600;
+        }
+
+        .approval-hub .milestone-repository {
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+            margin-left     : 8px;
+        }
+
+        .approval-hub .milestone-indicators {
+            align-items     : center;
+            display         : flex;
+            gap             : 8px;
+        }
+
+        .approval-hub .milestone-due {
+            color           : var(--color-text-secondary);
+            font-size       : 12px;
+            white-space     : nowrap;
+        }
+
+        .approval-hub .milestone-overdue-label {
+            background      : var(--chip-danger-bg);
+            border-radius   : 999px;
+            color           : var(--color-danger);
+            font-size       : 11px;
+            font-weight     : 600;
+            padding         : 4px 12px;
+        }
+
+        .approval-hub .chip-pull-requests {
+            background      : var(--chip-neutral-bg);
+            color           : var(--color-text-secondary);
+        }
+
+        .approval-hub .milestone-progress-track {
+            background      : var(--color-surface);
+            border-radius   : 3px;
+            height          : 8px;
+            margin-top      : 8px;
+        }
+
+        .approval-hub .milestone-progress-fill {
+            background      : var(--color-success);
+            border-radius   : 3px;
+            height          : 100%;
+            max-width       : 100%;
+        }
+
+        .approval-hub .milestone-progress-caption {
+            color           : var(--color-text-secondary);
+            display         : block;
+            font-size       : 12px;
+            margin-top      : 4px;
+        }
+
+        /* Decision status */
+        .approval-hub .decision-status {
+            border          : 1px solid var(--color-border);
+            border-radius   : 8px;
+            font-size       : 12px;
+            margin-top      : 12px;
+            padding         : 8px 12px;
+        }
+
+        .approval-hub .decision-status-merging {
+            background      : var(--color-surface);
+            color           : var(--color-text-secondary);
+        }
+
+        .approval-hub .decision-status-error {
+            background      : var(--chip-danger-bg);
+            border-color    : var(--color-border);
+            color           : var(--color-danger);
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion : reduce) {
+            .approval-hub .request-card {
+                transition  : none;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width : 860px) {
+            .stat-card-row {
+                grid-template-columns : repeat(2, minmax(0, 1fr));
+            }
+
+            .analytics-columns {
+                grid-template-columns : 1fr;
+            }
+        }
+
+        @media (max-width : 480px) {
+            .stat-card-row {
+                grid-template-columns : 1fr;
+            }
+
+            .app-bar-inner {
+                flex-direction : column;
+                align-items    : flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- App Bar -->
+    <header class="app-bar">
+        <div class="app-bar-inner">
+            <div class="app-bar-heading">
+                <h1 class="page-title">Approval Hub</h1>
+                <p class="page-subtitle" id="pageSubtitle">Connecting to the local backend&hellip;</p>
+            </div>
+
+            <!-- App Bar Actions -->
+            <div class="app-bar-actions">
+                <a class="page-subtitle" href="index.html" style="font-weight: 600; text-decoration: none;">Landing</a>
+                <span class="connection-badge connection-badge-connecting" id="connectionBadge">
+                    <span class="connection-dot"></span>
+                    <span id="connectionBadgeText">connecting&hellip;</span>
+                </span>
+                <button class="sync-button" id="syncButton" type="button">Sync</button>
+            </div>
+        </div>
+
+        <!-- Inline Status Message -->
+        <p class="inline-status-message" id="inlineStatusMessage" hidden></p>
+    </header>
+
+    <div class="approval-hub">
+
+        <!-- Statistics -->
+        <section class="statistics-section" aria-label="Request statistics">
+
+            <!-- Stat Cards -->
+            <div class="stat-card-row">
+                <div class="stat-card">
+                    <span class="stat-card-label">Total requests</span>
+                    <span class="stat-card-value" id="totalRequestsValue">0</span>
+                </div>
+                <div class="stat-card stat-card-pending">
+                    <span class="stat-card-label">Pending</span>
+                    <span class="stat-card-value" id="pendingRequestsValue">0</span>
+                </div>
+                <div class="stat-card stat-card-approved">
+                    <span class="stat-card-label">Approved</span>
+                    <span class="stat-card-value" id="approvedRequestsValue">0</span>
+                </div>
+                <div class="stat-card stat-card-rejected">
+                    <span class="stat-card-label">Rejected</span>
+                    <span class="stat-card-value" id="rejectedRequestsValue">0</span>
+                </div>
+                <div class="stat-card stat-card-rate">
+                    <span class="stat-card-label">Approval rate</span>
+                    <span class="stat-card-value" id="approvalRateValue">&mdash;</span>
+                </div>
+            </div>
+
+            <!-- Status Split Bar -->
+            <div class="status-split-panel">
+                <div class="status-split-bar" id="statusSplitBar" role="img" aria-label="Status split of all requests">
+                    <div class="status-split-segment status-split-segment-pending" id="pendingSplitSegment"></div>
+                    <div class="status-split-segment status-split-segment-approved" id="approvedSplitSegment"></div>
+                    <div class="status-split-segment status-split-segment-rejected" id="rejectedSplitSegment"></div>
+                </div>
+
+                <!-- Legend -->
+                <div class="status-split-legend" id="statusSplitLegend"></div>
+            </div>
+        </section>
+
+        <!-- Analytics -->
+        <section class="panel" aria-labelledby="analytics-title">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title" id="analytics-title">Analytics</h2>
+                    <span class="panel-purpose">Decision activity and repository distribution</span>
+                </div>
+                <span class="sample-data-tag" id="analyticsSampleTag" hidden>sample data</span>
+            </div>
+
+            <!-- Chart Columns -->
+            <div class="analytics-columns">
+                <div>
+                    <h3 class="analytics-chart-title">Decision activity</h3>
+                    <svg class="analytics-chart-svg" id="decisionActivityChart" viewBox="0 0 420 190" role="img" aria-label="Decisions per day for the last 14 days"></svg>
+                </div>
+                <div>
+                    <h3 class="analytics-chart-title">Requests by repository</h3>
+                    <svg class="analytics-chart-svg" id="repositoryDistributionChart" viewBox="0 0 420 190" role="img" aria-label="Number of requests per repository"></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Requests Board -->
+        <section class="panel" aria-labelledby="requests-board-title">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title" id="requests-board-title">Requests Board</h2>
+                    <span class="panel-purpose">Incoming requests at a glance</span>
+                </div>
+
+                <!-- Filter -->
+                <div class="status-filter" id="statusFilter" role="group" aria-label="Filter requests by status"></div>
+            </div>
+
+            <!-- Request Cards -->
+            <div class="request-list" id="requestList"></div>
+        </section>
+
+        <!-- Milestones -->
+        <section class="panel" aria-labelledby="milestones-title">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title" id="milestones-title">Milestones</h2>
+                    <span class="panel-purpose">Progress on the milestones of the synced pull requests</span>
+                </div>
+                <span class="sample-data-tag" id="milestonesSampleTag" hidden>sample data</span>
+            </div>
+
+            <!-- Milestone Rows -->
+            <div id="milestoneList"></div>
+        </section>
+
+        <!-- Request Details -->
+        <section class="panel" aria-labelledby="request-details-title">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title" id="request-details-title">Request Details</h2>
+                    <span class="panel-purpose">Inspect the selected request before deciding</span>
+                </div>
+            </div>
+
+            <div id="requestDetails">
+                <p class="detail-summary" id="detailSummary"></p>
+
+                <a class="detail-pr-link" id="detailPrLink" target="_blank" rel="noopener noreferrer" hidden>Open on GitHub &#8599;</a>
+
+                <!-- Detail Meta -->
+                <div class="detail-meta-row" id="detailMetaRow"></div>
+
+                <!-- Reason -->
+                <p class="detail-reason" id="detailReason"></p>
+
+                <!-- Review Note -->
+                <label class="detail-label" for="reviewNoteInput">Review note (optional)</label>
+                <textarea class="review-note-input" id="reviewNoteInput" rows="2" placeholder="Add a short note to record with your decision"></textarea>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="button-approve" id="approveButton" type="button">Approve</button>
+                    <button class="button-reject" id="rejectButton" type="button">Reject</button>
+                </div>
+
+                <!-- Decision Status -->
+                <div class="decision-status decision-status-merging" id="decisionStatus" hidden></div>
+
+                <div class="decision-note" id="decisionNote" hidden></div>
+            </div>
+        </section>
+
+        <!-- Audit Trail -->
+        <section class="panel" aria-labelledby="audit-trail-title">
+            <div class="panel-header">
+                <div>
+                    <h2 class="panel-title" id="audit-trail-title">Audit Trail</h2>
+                    <span class="panel-purpose">History of past decisions</span>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <ul class="audit-timeline" id="auditTimeline"></ul>
+        </section>
+
+    </div>
+
+    <script>
+        (function () {
+            // -----------------------------------------------------------------------------------------------------
+            // @ Backend configuration
+            // -----------------------------------------------------------------------------------------------------
+            const backendConfiguration = {
+                baseUrl            : 'http://localhost:3001',
+                pullRequestListPath: '/api/pull-request/list',
+                auditListPath      : '/api/audit/list',
+                milestoneListPath  : '/api/milestone/list',
+                decisionPath       : '/api/decision'
+            };
+
+            const statusFilters = [
+                { name : 'All',       value : 'ALL' },
+                { name : 'Pending',   value : 'pending' },
+                { name : 'Approved',  value : 'approved' },
+                { name : 'Rejected',  value : 'rejected' }
+            ];
+
+            // -----------------------------------------------------------------------------------------------------
+            // @ Sample data (Malaysia-specific, used only as the offline fallback)
+            // -----------------------------------------------------------------------------------------------------
+
+            /**
+             * Build a fresh copy of the sample requests used when the backend is unreachable
+             */
+            function buildSampleRequests() {
+                const sampleNow = new Date();
+
+                return [
+                    {
+                        requestId           : 'req-deploy-payment',
+                        type                : 'Production Deploy',
+                        summary             : 'Deploy payment-service v2.4.1 to the Kuala Lumpur production cluster',
+                        title               : 'Deploy payment-service v2.4.1 to the Kuala Lumpur production cluster',
+                        requester           : 'Release Bot (CI agent, DevOps)',
+                        target              : 'payment-service @ kl-prod-cluster',
+                        reason              : 'Includes the DuitNow QR callback fix validated in staging yesterday. Two smoke tests passed; no schema changes.',
+                        riskLevel           : 'High',
+                        status              : 'pending',
+                        repositoryFullName  : 'payments/api',
+                        pullRequestNumber   : 142,
+                        decidedAt           : null
+                    },
+                    {
+                        requestId           : 'req-rotate-keys',
+                        type                : 'Credential Rotation',
+                        summary             : 'Rotate the API keys for the MyKad verification sandbox',
+                        title               : 'Rotate the API keys for the MyKad verification sandbox',
+                        requester           : 'SecOps Agent (scheduled task)',
+                        target              : 'mykad-verification-sandbox keys (2 of 2)',
+                        reason              : 'Keys are 89 days old and the rotation policy window closes this week. Sandbox traffic only; no production impact.',
+                        riskLevel           : 'Medium',
+                        status              : 'approved',
+                        repositoryFullName  : 'payments/api',
+                        pullRequestNumber   : 137,
+                        decidedAt           : new Date(sampleNow.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        requestId           : 'req-export-logs',
+                        type                : 'Data Export',
+                        summary             : 'Export last month\u2019s app logs from the Penang edge nodes for a latency report',
+                        title               : 'Export last month\u2019s app logs from the Penang edge nodes for a latency report',
+                        requester           : 'QADash Agent (reporting)',
+                        target              : 'penang-edge-01..06, logs/2026-10',
+                        reason              : 'The team lead asked for a p95 latency breakdown by Malaysian state before Friday\u2019s infra review. Export is read-only.',
+                        riskLevel           : 'Low',
+                        status              : 'pending',
+                        repositoryFullName  : 'ops/observability',
+                        pullRequestNumber   : 58,
+                        decidedAt           : null
+                    },
+                    {
+                        requestId           : 'req-rotate-staging-secret',
+                        type                : 'Credential Rotation',
+                        summary             : 'Rotate the staging webhook secret for the e-invoicing integration',
+                        title               : 'Rotate the staging webhook secret for the e-invoicing integration',
+                        requester           : 'SecOps Agent (scheduled task)',
+                        target              : 'e-invoicing-staging webhook secret',
+                        reason              : 'Monthly rotation due. Staging only.',
+                        riskLevel           : 'Medium',
+                        status              : 'approved',
+                        repositoryFullName  : 'payments/api',
+                        pullRequestNumber   : 131,
+                        decidedAt           : new Date(sampleNow.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        requestId           : 'req-open-vpn-port',
+                        type                : 'Network Change',
+                        summary             : 'Open port 22 to the office VPN for the Johor Bahru test rig',
+                        title               : 'Open port 22 to the office VPN for the Johor Bahru test rig',
+                        requester           : 'QA Agent (infrastructure)',
+                        target              : 'jb-test-rig firewall rules',
+                        reason              : 'Requested direct SSH access for hardware debugging.',
+                        riskLevel           : 'High',
+                        status              : 'rejected',
+                        repositoryFullName  : 'ops/observability',
+                        pullRequestNumber   : 54,
+                        decidedAt           : new Date(sampleNow.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString()
+                    }
+                ];
+            }
+
+            /**
+             * Build a fresh copy of the seeded audit entries used when the backend is unreachable
+             */
+            function buildSampleAuditEntries() {
+                const sampleNow = new Date();
+
+                return [
+                    {
+                        time    : 'Earlier today',
+                        action  : 'approved',
+                        summary : 'payments/api #131: Rotate the staging webhook secret for the e-invoicing integration',
+                        note    : 'Routine rotation, verified in the changelog.',
+                        decidedAt : new Date(sampleNow.getTime() - 6 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        time    : 'Yesterday',
+                        action  : 'rejected',
+                        summary : 'ops/observability #54: Open port 22 to the office VPN for the Johor Bahru test rig',
+                        note    : 'Use the existing bastion host instead.',
+                        decidedAt : new Date(sampleNow.getTime() - 30 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        time    : '5 days ago',
+                        action  : 'approved',
+                        summary : 'payments/api #128: Cache the DuitNow status lookups for 30 seconds',
+                        note    : '',
+                        decidedAt : new Date(sampleNow.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString()
+                    },
+                    {
+                        time    : '9 days ago',
+                        action  : 'rejected',
+                        summary : 'payments/api #120: Skip the settlement reconciliation on weekends',
+                        note    : 'Reconciliation must always run.',
+                        decidedAt : new Date(sampleNow.getTime() - 9 * 24 * 60 * 60 * 1000).toISOString()
+                    }
+                ];
+            }
+
+            /**
+             * Build a fresh copy of the sample milestones used when the backend is unreachable
+             */
+            function buildSampleMilestones() {
+                return [
+                    {
+                        repositoryFullName : 'payments/api',
+                        milestoneTitle     : 'Sprint 42 \u2014 Payment hardening',
+                        dueOn              : new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+                        openIssues         : 2,
+                        closedIssues       : 6,
+                        pullRequestCount   : 3
+                    },
+                    {
+                        repositoryFullName : 'ops/observability',
+                        milestoneTitle     : 'Q4 infra cleanup',
+                        dueOn              : new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+                        openIssues         : 3,
+                        closedIssues       : 2,
+                        pullRequestCount   : 1
+                    }
+                ];
+            }
+
+            // -----------------------------------------------------------------------------------------------------
+            // @ State
+            // -----------------------------------------------------------------------------------------------------
+            let statusFilter      = 'ALL';
+            let selectedRequestId = null;
+            let requests          = [];
+            let auditEntries      = [];
+            let milestones        = [];
+            let dataSourceMode    = 'connecting';
+            let inlineStatusTimeout = null;
+            let mergePending        = false;
+            let mergeEllipsisPhase  = 0;
+            let mergeEllipsisTimer  = null;
+
+            // -----------------------------------------------------------------------------------------------------
+            // @ Public methods
+            // -----------------------------------------------------------------------------------------------------
+
+            /**
+             * Select a request to review
+             *
+             * @param requestId
+             */
+            function selectRequest(requestId) {
+                selectedRequestId = requestId;
+                renderRequestList();
+                renderRequestDetails();
+            }
+
+            /**
+             * Change the status filter
+             *
+             * @param filterValue
+             */
+            function onStatusFilterChange(filterValue) {
+                statusFilter = filterValue;
+                renderStatusFilter();
+                renderRequestList();
+            }
+
+            /**
+             * Approve the selected request
+             */
+            function onApproveRequest() {
+                submitDecision('approved');
+            }
+
+            /**
+             * Reject the selected request
+             */
+            function onRejectRequest() {
+                submitDecision('rejected');
+            }
+
+            /**
+             * Re-fetch both backend endpoints and refresh the page
+             */
+            async function onSyncButtonClick() {
+                const syncButton = document.getElementById('syncButton');
+                syncButton.disabled = true;
+                try {
+                    await refreshFromBackend();
+                } finally {
+                    syncButton.disabled = false;
+                }
+            }
+
+            // -----------------------------------------------------------------------------------------------------
+            // @ Private methods
+            // -----------------------------------------------------------------------------------------------------
+
+            /**
+             * Apply a decision to the selected request, record the audit entry, and sync with the backend when connected
+             *
+             * @param decisionStatus
+             */
+            async function submitDecision(decisionStatus) {
+                const selectedRequest = requests.find((request) => request.requestId === selectedRequestId);
+                if (!selectedRequest || selectedRequest.status !== 'pending') {
+                    return;
+                }
+
+                const reviewNoteInput = document.getElementById('reviewNoteInput');
+                const reviewNote = reviewNoteInput.value.trim();
+                reviewNoteInput.value = '';
+
+                // Update the request status first, then record the audit entry optimistically
+                selectedRequest.status = decisionStatus;
+                selectedRequest.reviewNote = reviewNote;
+                if (!selectedRequest.decidedAt) {
+                    selectedRequest.decidedAt = new Date().toISOString();
+                }
+                auditEntries.unshift({
+                    time    : formatTimestamp(new Date()),
+                    action  : decisionStatus,
+                    summary : buildAuditSummary(selectedRequest),
+                    note    : reviewNote,
+                    decidedAt : new Date().toISOString()
+                });
+
+                renderRequestList();
+                renderRequestDetails();
+                renderStatistics();
+                renderAuditTimeline();
+                renderAnalytics();
+
+                if (dataSourceMode !== 'connected') {
+                    return;
+                }
+
+                if (decisionStatus === 'approved') {
+                    await submitMergeDecision(selectedRequest, decisionStatus, reviewNote);
+                    return;
+                }
+
+                try {
+                    await postDecisionToBackend(selectedRequest, decisionStatus, reviewNote);
+                    await refreshFromBackend();
+                } catch (decisionError) {
+                    enterOfflineMode('Could not reach the backend to record the decision \u2014 switched to sample data.', false);
+                }
+            }
+
+            /**
+             * Submit an approval, showing the local-merge progress while the backend performs the merge
+             *
+             * @param requestRecord
+             * @param decisionStatus
+             * @param reviewNote
+             */
+            async function submitMergeDecision(requestRecord, decisionStatus, reviewNote) {
+                beginMergeProgress();
+
+                try {
+                    await postDecisionToBackend(requestRecord, decisionStatus, reviewNote);
+                    endMergeProgress();
+                    await refreshFromBackend();
+                } catch (decisionError) {
+                    endMergeProgress();
+
+                    // Undo the optimistic status change so the board stays truthful, then re-fetch
+                    requestRecord.status = 'pending';
+                    auditEntries.shift();
+                    renderRequestList();
+                    renderRequestDetails();
+                    renderStatistics();
+                    renderAuditTimeline();
+                    renderAnalytics();
+                    await refreshFromBackend();
+                    showDecisionError('Merge failed: ' + decisionError.message);
+                }
+            }
+
+            /**
+             * Disable the decision buttons and show the inline merging status while the backend merges the pull request
+             */
+            function beginMergeProgress() {
+                mergePending = true;
+                document.getElementById('approveButton').disabled = true;
+                document.getElementById('rejectButton').disabled = true;
+                document.getElementById('approveButton').textContent = 'Merging\u2026';
+
+                const decisionStatus = document.getElementById('decisionStatus');
+                decisionStatus.className = 'decision-status decision-status-merging';
+                decisionStatus.textContent = 'Merging the pull request locally...';
+                decisionStatus.hidden = false;
+
+                // Drive a simple animated ellipsis on the status line while the merge runs (unless the user prefers reduced motion)
+                mergeEllipsisPhase = 3;
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (!prefersReducedMotion) {
+                    mergeEllipsisTimer = setInterval(() => {
+                        mergeEllipsisPhase = (mergeEllipsisPhase + 1) % 4;
+                        decisionStatus.textContent = 'Merging the pull request locally' + '.'.repeat(mergeEllipsisPhase);
+                    }, 400);
+                }
+            }
+
+            /**
+             * Restore the decision buttons and hide the merging status once the backend merge settles
+             */
+            function endMergeProgress() {
+                mergePending = false;
+                if (mergeEllipsisTimer !== null) {
+                    clearInterval(mergeEllipsisTimer);
+                    mergeEllipsisTimer = null;
+                }
+
+                document.getElementById('approveButton').textContent = 'Approve';
+
+                const decisionStatus = document.getElementById('decisionStatus');
+                decisionStatus.hidden = true;
+                decisionStatus.textContent = '';
+
+                renderRequestDetails();
+            }
+
+            /**
+             * Show an inline error message in the details panel after a failed merge
+             *
+             * @param errorMessage
+             */
+            function showDecisionError(errorMessage) {
+                const decisionStatus = document.getElementById('decisionStatus');
+                decisionStatus.className = 'decision-status decision-status-error';
+                decisionStatus.textContent = errorMessage;
+                decisionStatus.hidden = false;
+            }
+
+            /**
+             * Fetch JSON from a backend endpoint and return the data array from the envelope
+             *
+             * @param endpointUrl
+             */
+            async function fetchBackendJson(endpointUrl) {
+                const endpointResponse = await fetch(endpointUrl, { headers: { 'Accept': 'application/json' } });
+                if (!endpointResponse.ok) {
+                    throw new Error('Endpoint responded with status ' + endpointResponse.status);
+                }
+
+                const responseEnvelope = await endpointResponse.json();
+                if (!responseEnvelope || !Array.isArray(responseEnvelope.data)) {
+                    throw new Error('Endpoint response envelope is missing a data array');
+                }
+
+                return responseEnvelope.data;
+            }
+
+            /**
+             * POST a decision for a request to the backend
+             *
+             * @param requestRecord
+             * @param decisionStatus
+             * @param reviewNote
+             */
+            async function postDecisionToBackend(requestRecord, decisionStatus, reviewNote) {
+                const decisionResponse = await fetch(backendConfiguration.baseUrl + backendConfiguration.decisionPath, {
+                    method  : 'POST',
+                    headers : { 'Content-Type': 'application/json' },
+                    body    : JSON.stringify({
+                        repositoryFullName : requestRecord.repositoryFullName,
+                        pullRequestNumber  : requestRecord.pullRequestNumber,
+                        status             : decisionStatus.toUpperCase(),
+                        reviewNote         : reviewNote
+                    })
+                });
+
+                if (!decisionResponse.ok) {
+                    // Surface the backend error message from the envelope when it provides one
+                    let backendMessage = 'the backend responded with status ' + decisionResponse.status;
+                    try {
+                        const errorEnvelope = await decisionResponse.json();
+                        if (errorEnvelope && errorEnvelope.message) {
+                            backendMessage = errorEnvelope.message;
+                        }
+                    } catch (parseError) {
+                        // Keep the status-based message when the body is not JSON
+                    }
+
+                    throw new Error(backendMessage);
+                }
+            }
+
+            /**
+             * Fetch both backend endpoints and replace the local data, falling back to sample data when offline
+             */
+            async function refreshFromBackend() {
+                const previousMode = dataSourceMode;
+                dataSourceMode = 'connecting';
+                renderConnectionState();
+
+                try {
+                    const pullRequestRecords = await fetchBackendJson(backendConfiguration.baseUrl + backendConfiguration.pullRequestListPath);
+                    const auditRecords = await fetchBackendJson(backendConfiguration.baseUrl + backendConfiguration.auditListPath);
+                    const milestoneRecords = await fetchBackendJson(backendConfiguration.baseUrl + backendConfiguration.milestoneListPath);
+
+                    requests = pullRequestRecords.map(mapBackendPullRequest);
+                    auditEntries = auditRecords.map(mapBackendAuditEntry);
+                    milestones = milestoneRecords.map(mapBackendMilestone);
+                    dataSourceMode = 'connected';
+                    ensureValidSelection();
+                    renderAll();
+                    showInlineStatus('Synced with the backend just now.');
+                } catch (syncError) {
+                    enterOfflineMode('Backend unreachable \u2014 showing sample data.', previousMode === 'offline' && requests.length > 0);
+                }
+            }
+
+            /**
+             * Switch the page to offline sample-data mode, optionally keeping the current in-memory data
+             *
+             * @param offlineMessage
+             * @param keepCurrentData
+             */
+            function enterOfflineMode(offlineMessage, keepCurrentData) {
+                if (!keepCurrentData) {
+                    requests = buildSampleRequests();
+                    auditEntries = buildSampleAuditEntries();
+                    milestones = buildSampleMilestones();
+                    ensureValidSelection();
+                }
+
+                dataSourceMode = 'offline';
+                renderAll();
+                showInlineStatus(offlineMessage);
+            }
+
+            /**
+             * Map a backend pull request record to a request card entry
+             *
+             * @param pullRequestRecord
+             */
+            function mapBackendPullRequest(pullRequestRecord) {
+                const isDraft = pullRequestRecord.isDraft === true;
+                const decisionStatus = pullRequestRecord.decision === null || pullRequestRecord.decision === undefined
+                    ? 'pending'
+                    : String(pullRequestRecord.decision).toLowerCase();
+
+                return {
+                    requestId           : 'pr-' + pullRequestRecord.pullRequestId,
+                    type                : isDraft ? 'Draft PR' : 'Pull Request',
+                    title               : pullRequestRecord.title,
+                    summary             : pullRequestRecord.title,
+                    requester           : pullRequestRecord.authorLogin,
+                    target              : pullRequestRecord.repositoryFullName + ' #' + pullRequestRecord.pullRequestNumber + ' (' + pullRequestRecord.headRefName + ' \u2192 ' + pullRequestRecord.baseRefName + ')',
+                    reason              : pullRequestRecord.body || '(no description provided on the pull request)',
+                    riskLevel           : isDraft ? 'Medium' : 'Low',
+                    status              : decisionStatus,
+                    prUrl               : pullRequestRecord.htmlUrl,
+                    repositoryFullName  : pullRequestRecord.repositoryFullName,
+                    pullRequestNumber   : pullRequestRecord.pullRequestNumber,
+                    reviewNote          : pullRequestRecord.reviewNote,
+                    decidedBy           : pullRequestRecord.decidedBy,
+                    decidedAt           : pullRequestRecord.decidedAt
+                };
+            }
+
+            /**
+             * Map a backend audit record to an audit timeline entry
+             *
+             * @param auditRecord
+             */
+            function mapBackendAuditEntry(auditRecord) {
+                return {
+                    time    : formatAuditTimestamp(auditRecord.decidedAt),
+                    action  : String(auditRecord.action).toLowerCase(),
+                    summary : auditRecord.repositoryFullName + ' #' + auditRecord.pullRequestNumber + ': ' + auditRecord.pullRequestTitle,
+                    note    : auditRecord.reviewNote,
+                    decidedAt : auditRecord.decidedAt
+                };
+            }
+
+            /**
+             * Map a backend milestone record to a milestone row entry
+             *
+             * @param milestoneRecord
+             */
+            function mapBackendMilestone(milestoneRecord) {
+                return {
+                    repositoryFullName : milestoneRecord.repositoryFullName,
+                    milestoneTitle     : milestoneRecord.milestoneTitle,
+                    dueOn              : milestoneRecord.dueOn,
+                    openIssues         : Number(milestoneRecord.openIssues) || 0,
+                    closedIssues       : Number(milestoneRecord.closedIssues) || 0,
+                    pullRequestCount   : Number(milestoneRecord.pullRequestCount) || 0
+                };
+            }
+
+            /**
+             * Build the audit summary text for a request, mirroring the backend audit format when available
+             *
+             * @param requestRecord
+             */
+            function buildAuditSummary(requestRecord) {
+                if (requestRecord.repositoryFullName && requestRecord.pullRequestNumber) {
+                    return requestRecord.repositoryFullName + ' #' + requestRecord.pullRequestNumber + ': ' + requestRecord.title;
+                }
+
+                return requestRecord.summary;
+            }
+
+            /**
+             * Keep the selected request valid against the current request list
+             */
+            function ensureValidSelection() {
+                const selectionStillExists = requests.some((request) => request.requestId === selectedRequestId);
+                if (!selectionStillExists) {
+                    selectedRequestId = requests.length > 0 ? requests[0].requestId : null;
+                }
+            }
+
+            /**
+             * Render every region of the page
+             */
+            function renderAll() {
+                renderConnectionState();
+                renderStatistics();
+                renderAnalytics();
+                renderStatusFilter();
+                renderRequestList();
+                renderMilestones();
+                renderRequestDetails();
+                renderAuditTimeline();
+            }
+
+            /**
+             * Render the connection badge and the subtitle that labels the current data source
+             */
+            function renderConnectionState() {
+                const connectionBadge = document.getElementById('connectionBadge');
+                const connectionBadgeText = document.getElementById('connectionBadgeText');
+                const pageSubtitle = document.getElementById('pageSubtitle');
+
+                connectionBadge.classList.remove('connection-badge-connected', 'connection-badge-offline', 'connection-badge-connecting');
+
+                if (dataSourceMode === 'connected') {
+                    connectionBadge.classList.add('connection-badge-connected');
+                    connectionBadgeText.textContent = 'connected';
+                    pageSubtitle.textContent = 'Review GitHub pull request approval requests, decide on one screen, and keep a visible audit trail.';
+                } else if (dataSourceMode === 'connecting') {
+                    connectionBadge.classList.add('connection-badge-connecting');
+                    connectionBadgeText.textContent = 'connecting\u2026';
+                    pageSubtitle.textContent = 'Connecting to the local backend\u2026';
+                } else {
+                    connectionBadge.classList.add('connection-badge-offline');
+                    connectionBadgeText.textContent = 'offline \u2014 sample data';
+                    pageSubtitle.textContent = 'Backend unreachable \u2014 showing sample data only. Start the backend on localhost:3001 and press Sync to load live requests.';
+                }
+            }
+
+            /**
+             * Render the stat cards and the status split bar from all requests, regardless of the active filter
+             */
+            function renderStatistics() {
+                const totalRequestCount = requests.length;
+                const pendingRequestCount = requests.filter((request) => request.status === 'pending').length;
+                const approvedRequestCount = requests.filter((request) => request.status === 'approved').length;
+                const rejectedRequestCount = requests.filter((request) => request.status === 'rejected').length;
+                const decidedRequestCount = approvedRequestCount + rejectedRequestCount;
+
+                document.getElementById('totalRequestsValue').textContent = totalRequestCount;
+                document.getElementById('pendingRequestsValue').textContent = pendingRequestCount;
+                document.getElementById('approvedRequestsValue').textContent = approvedRequestCount;
+                document.getElementById('rejectedRequestsValue').textContent = rejectedRequestCount;
+
+                const approvalRateValue = document.getElementById('approvalRateValue');
+                approvalRateValue.textContent = decidedRequestCount === 0
+                    ? '\u2014'
+                    : Math.round((approvedRequestCount / decidedRequestCount) * 100) + '%';
+
+                const pendingShare = totalRequestCount === 0 ? 0 : (pendingRequestCount / totalRequestCount) * 100;
+                const approvedShare = totalRequestCount === 0 ? 0 : (approvedRequestCount / totalRequestCount) * 100;
+                const rejectedShare = totalRequestCount === 0 ? 0 : (rejectedRequestCount / totalRequestCount) * 100;
+
+                document.getElementById('pendingSplitSegment').style.width = pendingShare + '%';
+                document.getElementById('approvedSplitSegment').style.width = approvedShare + '%';
+                document.getElementById('rejectedSplitSegment').style.width = rejectedShare + '%';
+
+                document.getElementById('statusSplitBar').setAttribute(
+                    'aria-label',
+                    'Status split of all requests: ' + pendingRequestCount + ' pending, ' + approvedRequestCount + ' approved, ' + rejectedRequestCount + ' rejected'
+                );
+
+                renderStatusSplitLegend(pendingRequestCount, approvedRequestCount, rejectedRequestCount);
+            }
+
+            /**
+             * Render the legend below the status split bar
+             *
+             * @param pendingRequestCount
+             * @param approvedRequestCount
+             * @param rejectedRequestCount
+             */
+            function renderStatusSplitLegend(pendingRequestCount, approvedRequestCount, rejectedRequestCount) {
+                const statusSplitLegend = document.getElementById('statusSplitLegend');
+                statusSplitLegend.innerHTML = '';
+
+                const legendItems = [
+                    { label : 'Pending',   count : pendingRequestCount,   dotClassName : 'legend-dot-pending' },
+                    { label : 'Approved',  count : approvedRequestCount,  dotClassName : 'legend-dot-approved' },
+                    { label : 'Rejected',  count : rejectedRequestCount,  dotClassName : 'legend-dot-rejected' }
+                ];
+
+                legendItems.forEach((legendItem) => {
+                    const legendItemContainer = document.createElement('span');
+                    legendItemContainer.className = 'legend-item';
+
+                    const legendDot = document.createElement('span');
+                    legendDot.className = 'legend-dot ' + legendItem.dotClassName;
+
+                    const legendText = document.createElement('span');
+                    legendText.textContent = legendItem.label + ' ' + legendItem.count;
+
+                    legendItemContainer.appendChild(legendDot);
+                    legendItemContainer.appendChild(legendText);
+                    statusSplitLegend.appendChild(legendItemContainer);
+                });
+            }
+
+            /**
+             * Render both analytics charts and the sample-data tag from the current in-memory data
+             */
+            function renderAnalytics() {
+                const isOfflineSample = dataSourceMode === 'offline';
+                document.getElementById('analyticsSampleTag').hidden = !isOfflineSample;
+
+                renderDecisionActivityChart();
+                renderRepositoryDistributionChart();
+            }
+
+            /**
+             * Render the decisions-per-day stacked bar chart for the last 14 days from the audit entries
+             */
+            function renderDecisionActivityChart() {
+                const decisionActivityChart = document.getElementById('decisionActivityChart');
+                decisionActivityChart.innerHTML = '';
+
+                const chartLeft     = 8;
+                const chartRight    = 8;
+                const chartTop      = 10;
+                const chartBottom   = 24;
+                const chartWidth    = 420 - chartLeft - chartRight;
+                const chartHeight   = 190 - chartTop - chartBottom;
+                const baselineY     = chartTop + chartHeight;
+                const dayCount      = 14;
+                const daySlotWidth  = chartWidth / dayCount;
+                const barWidth      = Math.min(20, daySlotWidth * 0.6);
+
+                // Bucket the audit entries into per-day approved/rejected counts for the last 14 days
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+                const dailyBuckets = [];
+                for (let dayIndex = dayCount - 1; dayIndex >= 0; dayIndex -= 1) {
+                    const dayStart = new Date(todayStart.getTime() - dayIndex * 24 * 60 * 60 * 1000);
+                    dailyBuckets.push({ dayStart : dayStart, approved : 0, rejected : 0 });
+                }
+
+                auditEntries.forEach((auditEntry) => {
+                    const decidedDate = new Date(auditEntry.decidedAt);
+                    if (Number.isNaN(decidedDate.getTime()) || (auditEntry.action !== 'approved' && auditEntry.action !== 'rejected')) {
+                        return;
+                    }
+
+                    const dayStart = new Date(decidedDate);
+                    dayStart.setHours(0, 0, 0, 0);
+                    const bucketIndex = dailyBuckets.findIndex((dailyBucket) => dailyBucket.dayStart.getTime() === dayStart.getTime());
+                    if (bucketIndex !== -1) {
+                        dailyBuckets[bucketIndex][auditEntry.action] += 1;
+                    }
+                });
+
+                // Auto-scale the y axis to a nice step so gridlines land on round numbers
+                const maxDayTotal = dailyBuckets.reduce((runningMax, dailyBucket) => Math.max(runningMax, dailyBucket.approved + dailyBucket.rejected), 0);
+                const axisStep = buildNiceAxisStep(Math.max(1, maxDayTotal / 4));
+                const gridlineCount = Math.max(1, Math.ceil(maxDayTotal / axisStep));
+                const scaledMax = gridlineCount * axisStep;
+
+                // Light grey gridlines above the baseline
+                for (let gridlineIndex = 1; gridlineIndex <= gridlineCount; gridlineIndex += 1) {
+                    const gridlineY = baselineY - (chartHeight * gridlineIndex) / gridlineCount;
+                    decisionActivityChart.appendChild(buildSvgNode('line', {
+                        x1 : chartLeft,
+                        x2 : chartLeft + chartWidth,
+                        y1 : gridlineY,
+                        y2 : gridlineY,
+                        stroke : 'var(--color-border)',
+                        'stroke-width' : 1
+                    }));
+                }
+
+                // Baseline
+                decisionActivityChart.appendChild(buildSvgNode('line', {
+                    x1 : chartLeft,
+                    x2 : chartLeft + chartWidth,
+                    y1 : baselineY,
+                    y2 : baselineY,
+                    stroke : 'var(--color-border-strong)',
+                    'stroke-width' : 1
+                }));
+
+                // One stacked bar per day, with a 2px stub on empty days
+                dailyBuckets.forEach((dailyBucket, bucketIndex) => {
+                    const barCenterX = chartLeft + daySlotWidth * bucketIndex + daySlotWidth / 2;
+                    const barX = barCenterX - barWidth / 2;
+                    const approvedHeight = (chartHeight * dailyBucket.approved) / scaledMax;
+                    const rejectedHeight = (chartHeight * dailyBucket.rejected) / scaledMax;
+                    const dayTotal = dailyBucket.approved + dailyBucket.rejected;
+
+                    if (dayTotal === 0) {
+                        decisionActivityChart.appendChild(buildSvgNode('rect', {
+                            x      : barCenterX - barWidth / 2,
+                            y      : baselineY - 2,
+                            width  : barWidth,
+                            height : 2,
+                            rx     : 1,
+                            fill   : 'var(--color-border-strong)'
+                        }));
+                    } else {
+                        const barGroup = buildSvgNode('g', {});
+                        const barTitle = buildSvgNode('title', {});
+                        barTitle.textContent = formatShortDayLabel(dailyBucket.dayStart) + ': ' + dailyBucket.approved + ' approved, ' + dailyBucket.rejected + ' rejected';
+                        barGroup.appendChild(barTitle);
+
+                        if (dailyBucket.approved > 0) {
+                            barGroup.appendChild(buildSvgNode('rect', {
+                                x      : barX,
+                                y      : baselineY - approvedHeight - (dailyBucket.rejected > 0 ? rejectedHeight : 0),
+                                width  : barWidth,
+                                height : approvedHeight,
+                                rx     : dailyBucket.rejected > 0 ? 0 : 3,
+                                fill   : 'var(--color-success)'
+                            }));
+                        }
+
+                        if (dailyBucket.rejected > 0) {
+                            barGroup.appendChild(buildSvgNode('rect', {
+                                x      : barX,
+                                y      : baselineY - rejectedHeight,
+                                width  : barWidth,
+                                height : rejectedHeight,
+                                rx     : 3,
+                                fill   : 'var(--color-danger)'
+                            }));
+                        }
+
+                        decisionActivityChart.appendChild(barGroup);
+                    }
+
+                    // Small date label under every other bar
+                    if (bucketIndex % 2 === 0) {
+                        const dateLabel = buildSvgNode('text', {
+                            x            : barCenterX,
+                            y            : 190 - 8,
+                            'text-anchor' : 'middle',
+                            'font-size'   : 11,
+                            fill         : 'var(--color-text-secondary)'
+                        });
+                        dateLabel.textContent = formatShortDayLabel(dailyBucket.dayStart);
+                        decisionActivityChart.appendChild(dateLabel);
+                    }
+                });
+            }
+
+            /**
+             * Render the horizontal requests-per-repository bar chart from the full request list
+             */
+            function renderRepositoryDistributionChart() {
+                const repositoryDistributionChart = document.getElementById('repositoryDistributionChart');
+                repositoryDistributionChart.innerHTML = '';
+
+                const chartHeight     = 190;
+                const nameColumnWidth = 128;
+                const countGutter     = 30;
+                const trackLeft       = nameColumnWidth;
+                const trackRight      = 420 - countGutter;
+                const trackWidth      = trackRight - trackLeft;
+                const maxVisibleRows  = 6;
+
+                if (requests.length === 0) {
+                    const emptyNote = buildSvgNode('text', {
+                        x            : 210,
+                        y            : chartHeight / 2,
+                        'text-anchor' : 'middle',
+                        'font-size'   : 12,
+                        fill         : 'var(--color-text-secondary)'
+                    });
+                    emptyNote.textContent = 'No requests yet.';
+                    repositoryDistributionChart.appendChild(emptyNote);
+                    return;
+                }
+
+                // Count requests per repository across all requests, regardless of the active filter
+                const repositoryCounts = new Map();
+                requests.forEach((request) => {
+                    const repositoryName = request.repositoryFullName || '(no repository)';
+                    repositoryCounts.set(repositoryName, (repositoryCounts.get(repositoryName) || 0) + 1);
+                });
+
+                const sortedRepositories = Array.from(repositoryCounts.entries()).sort((first, second) => second[1] - first[1]);
+                const visibleRepositories = sortedRepositories.slice(0, maxVisibleRows);
+                const hiddenRepositoryCount = sortedRepositories.length - visibleRepositories.length;
+                const rowHeight = (chartHeight - 8 - (hiddenRepositoryCount > 0 ? 16 : 0)) / visibleRepositories.length;
+                const barHeight = 10;
+
+                const maxRepositoryCount = visibleRepositories[0][1];
+
+                visibleRepositories.forEach((repositoryEntry, rowIndex) => {
+                    const repositoryName = repositoryEntry[0];
+                    const repositoryCount = repositoryEntry[1];
+                    const rowTop = 4 + rowHeight * rowIndex;
+                    const barY = rowTop + (rowHeight - barHeight) / 2;
+
+                    // Repository name on the left, truncated with an ellipsis when long
+                    const nameLabel = buildSvgNode('text', {
+                        x            : 0,
+                        y            : rowTop + rowHeight / 2 + 4,
+                        'font-size'   : 11,
+                        fill         : 'var(--color-text)'
+                    });
+                    nameLabel.textContent = truncateRepositoryName(repositoryName);
+                    repositoryDistributionChart.appendChild(nameLabel);
+
+                    // Light track with the amber bar on top of it
+                    repositoryDistributionChart.appendChild(buildSvgNode('rect', {
+                        x      : trackLeft,
+                        y      : barY,
+                        width  : trackWidth,
+                        height : barHeight,
+                        rx     : 2,
+                        fill   : 'var(--color-surface)'
+                    }));
+
+                    const barWidth = Math.max(2, (trackWidth * repositoryCount) / maxRepositoryCount);
+                    repositoryDistributionChart.appendChild(buildSvgNode('rect', {
+                        x      : trackLeft,
+                        y      : barY,
+                        width  : barWidth,
+                        height : barHeight,
+                        rx     : 2,
+                        fill   : 'var(--color-warning)'
+                    }));
+
+                    // Value label at the end of the bar
+                    const countLabel = buildSvgNode('text', {
+                        x            : trackLeft + barWidth + 6,
+                        y            : barY + barHeight - 1,
+                        'font-size'   : 11,
+                        fill         : 'var(--color-text-secondary)'
+                    });
+                    countLabel.textContent = String(repositoryCount);
+                    repositoryDistributionChart.appendChild(countLabel);
+                });
+
+                if (hiddenRepositoryCount > 0) {
+                    const moreLabel = buildSvgNode('text', {
+                        x            : 0,
+                        y            : chartHeight - 4,
+                        'font-size'   : 11,
+                        fill         : 'var(--color-text-secondary)'
+                    });
+                    moreLabel.textContent = '+ ' + hiddenRepositoryCount + ' more repositories';
+                    repositoryDistributionChart.appendChild(moreLabel);
+                }
+            }
+
+            /**
+             * Build an SVG node with the given tag name and attributes
+             *
+             * @param tagName
+             * @param nodeAttributes
+             */
+            function buildSvgNode(tagName, nodeAttributes) {
+                const svgNode = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+                Object.keys(nodeAttributes).forEach((attributeName) => {
+                    svgNode.setAttribute(attributeName, String(nodeAttributes[attributeName]));
+                });
+                return svgNode;
+            }
+
+            /**
+             * Pick a round axis step (1, 2, 5, 10, 25, ...) that is at least the requested raw step
+             *
+             * @param rawStep
+             */
+            function buildNiceAxisStep(rawStep) {
+                const stepCandidates = [1, 2, 5, 10, 25, 50, 100, 250, 500];
+                for (let candidateIndex = 0; candidateIndex < stepCandidates.length; candidateIndex += 1) {
+                    if (stepCandidates[candidateIndex] >= rawStep) {
+                        return stepCandidates[candidateIndex];
+                    }
+                }
+
+                return stepCandidates[stepCandidates.length - 1];
+            }
+
+            /**
+             * Truncate a repository name so it fits the name column of the repository chart
+             *
+             * @param repositoryName
+             */
+            function truncateRepositoryName(repositoryName) {
+                return repositoryName.length > 20 ? repositoryName.slice(0, 19) + '\u2026' : repositoryName;
+            }
+
+            /**
+             * Format a date as a short day label for the activity chart (e.g. "12 Nov")
+             *
+             * @param labelDate
+             */
+            function formatShortDayLabel(labelDate) {
+                return labelDate.toLocaleDateString(undefined, { day : 'numeric', month : 'short' });
+            }
+
+            /**
+             * Render the milestone rows, or the empty state when there are none
+             */
+            function renderMilestones() {
+                const milestoneList = document.getElementById('milestoneList');
+                milestoneList.innerHTML = '';
+
+                const isOfflineSample = dataSourceMode === 'offline';
+                document.getElementById('milestonesSampleTag').hidden = !isOfflineSample;
+
+                if (milestones.length === 0) {
+                    const noDataRow = document.createElement('div');
+                    noDataRow.className = 'no-data-row';
+                    noDataRow.textContent = 'No milestones on the synced pull requests.';
+                    milestoneList.appendChild(noDataRow);
+                    return;
+                }
+
+                milestones.forEach((milestone) => {
+                    const milestoneRow = document.createElement('div');
+                    milestoneRow.className = 'milestone-row';
+
+                    const topRow = document.createElement('div');
+                    topRow.className = 'milestone-top-row';
+
+                    const titleBlock = document.createElement('span');
+                    const milestoneTitle = document.createElement('span');
+                    milestoneTitle.className = 'milestone-title';
+                    milestoneTitle.textContent = milestone.milestoneTitle;
+
+                    const milestoneRepository = document.createElement('span');
+                    milestoneRepository.className = 'milestone-repository';
+                    milestoneRepository.textContent = milestone.repositoryFullName;
+
+                    titleBlock.appendChild(milestoneTitle);
+                    titleBlock.appendChild(milestoneRepository);
+
+                    const milestoneIndicators = document.createElement('span');
+                    milestoneIndicators.className = 'milestone-indicators';
+
+                    const todayStart = new Date();
+                    todayStart.setHours(0, 0, 0, 0);
+                    const dueDate = milestone.dueOn === null || milestone.dueOn === undefined ? null : new Date(milestone.dueOn);
+                    const hasDueDate = dueDate !== null && !Number.isNaN(dueDate.getTime());
+                    const isOverdue = hasDueDate && dueDate.getTime() < todayStart.getTime();
+
+                    if (hasDueDate) {
+                        const milestoneDue = document.createElement('span');
+                        milestoneDue.className = 'milestone-due';
+                        milestoneDue.textContent = (isOverdue ? 'Was due ' : 'Due ') + formatMilestoneDueDate(dueDate);
+                        milestoneIndicators.appendChild(milestoneDue);
+                    }
+
+                    if (isOverdue) {
+                        const overdueLabel = document.createElement('span');
+                        overdueLabel.className = 'milestone-overdue-label';
+                        overdueLabel.textContent = 'overdue';
+                        milestoneIndicators.appendChild(overdueLabel);
+                    }
+
+                    const pullRequestChip = document.createElement('span');
+                    pullRequestChip.className = 'chip chip-pull-requests';
+                    pullRequestChip.textContent = milestone.pullRequestCount + (milestone.pullRequestCount === 1 ? ' PR' : ' PRs');
+                    milestoneIndicators.appendChild(pullRequestChip);
+
+                    topRow.appendChild(titleBlock);
+                    topRow.appendChild(milestoneIndicators);
+
+                    const totalIssues = milestone.openIssues + milestone.closedIssues;
+                    const closedShare = totalIssues === 0 ? 0 : (milestone.closedIssues / totalIssues) * 100;
+
+                    const progressTrack = document.createElement('div');
+                    progressTrack.className = 'milestone-progress-track';
+
+                    const progressFill = document.createElement('div');
+                    progressFill.className = 'milestone-progress-fill';
+                    progressFill.style.width = closedShare + '%';
+                    progressTrack.appendChild(progressFill);
+
+                    const progressCaption = document.createElement('span');
+                    progressCaption.className = 'milestone-progress-caption';
+                    progressCaption.textContent = milestone.closedIssues + ' of ' + totalIssues + ' issues closed';
+
+                    milestoneRow.appendChild(topRow);
+                    milestoneRow.appendChild(progressTrack);
+                    milestoneRow.appendChild(progressCaption);
+                    milestoneList.appendChild(milestoneRow);
+                });
+            }
+
+            /**
+             * Format a milestone due date for display (e.g. "30 Nov 2026")
+             *
+             * @param dueDate
+             */
+            function formatMilestoneDueDate(dueDate) {
+                return dueDate.toLocaleDateString(undefined, { day : 'numeric', month : 'short', year : 'numeric' });
+            }
+
+            /**
+             * Render the status filter buttons
+             */
+            function renderStatusFilter() {
+                const statusFilterContainer = document.getElementById('statusFilter');
+                statusFilterContainer.innerHTML = '';
+
+                statusFilters.forEach((statusFilterOption) => {
+                    const filterButton = document.createElement('button');
+                    filterButton.type = 'button';
+                    filterButton.className = 'status-filter-button' + (statusFilter === statusFilterOption.value ? ' is-active' : '');
+                    filterButton.textContent = statusFilterOption.name;
+                    filterButton.setAttribute('aria-pressed', statusFilter === statusFilterOption.value ? 'true' : 'false');
+                    filterButton.addEventListener('click', () => onStatusFilterChange(statusFilterOption.value));
+                    statusFilterContainer.appendChild(filterButton);
+                });
+            }
+
+            /**
+             * Render the request cards that match the active status filter
+             */
+            function renderRequestList() {
+                const requestList = document.getElementById('requestList');
+                requestList.innerHTML = '';
+
+                // Get the requests matching the filter
+                const visibleRequests = requests.filter((request) => statusFilter === 'ALL' || request.status === statusFilter);
+
+                if (visibleRequests.length === 0) {
+                    const noDataRow = document.createElement('div');
+                    noDataRow.className = 'no-data-row';
+                    noDataRow.textContent = 'No requests with this status yet.';
+                    requestList.appendChild(noDataRow);
+                    return;
+                }
+
+                visibleRequests.forEach((request) => {
+                    const requestCard = document.createElement('div');
+                    requestCard.className = 'request-card' + (request.requestId === selectedRequestId ? ' is-selected' : '');
+                    requestCard.setAttribute('role', 'button');
+                    requestCard.setAttribute('tabindex', '0');
+                    requestCard.addEventListener('click', () => selectRequest(request.requestId));
+                    requestCard.addEventListener('keydown', (keyboardEvent) => onRequestCardKeydown(keyboardEvent, request.requestId));
+
+                    const topRow = document.createElement('div');
+                    topRow.className = 'request-card-top-row';
+
+                    const requestType = document.createElement('span');
+                    requestType.className = 'request-type';
+                    requestType.textContent = request.type;
+
+                    const requestCardActions = document.createElement('span');
+                    requestCardActions.className = 'request-card-actions';
+
+                    if (request.prUrl) {
+                        const pullRequestLink = document.createElement('a');
+                        pullRequestLink.className = 'request-link';
+                        pullRequestLink.href = request.prUrl;
+                        pullRequestLink.target = '_blank';
+                        pullRequestLink.rel = 'noopener noreferrer';
+                        pullRequestLink.setAttribute('aria-label', 'Open pull request ' + request.target + ' on GitHub');
+                        pullRequestLink.textContent = '\u2197';
+                        pullRequestLink.addEventListener('click', (clickEvent) => clickEvent.stopPropagation());
+                        requestCardActions.appendChild(pullRequestLink);
+                    }
+
+                    requestCardActions.appendChild(buildStatusChip(request.status));
+
+                    topRow.appendChild(requestType);
+                    topRow.appendChild(requestCardActions);
+
+                    const requestTitle = document.createElement('div');
+                    requestTitle.className = 'request-title';
+                    requestTitle.textContent = request.title;
+
+                    const requestMeta = document.createElement('div');
+                    requestMeta.className = 'request-meta';
+                    requestMeta.textContent = request.requester + ' \u00B7 ' + request.target;
+
+                    requestCard.appendChild(topRow);
+                    requestCard.appendChild(requestTitle);
+                    requestCard.appendChild(requestMeta);
+                    requestList.appendChild(requestCard);
+                });
+            }
+
+            /**
+             * Handle keyboard activation of a request card
+             *
+             * @param keyboardEvent
+             * @param requestId
+             */
+            function onRequestCardKeydown(keyboardEvent, requestId) {
+                if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+                    keyboardEvent.preventDefault();
+                    selectRequest(requestId);
+                }
+            }
+
+            /**
+             * Render the details of the selected request
+             */
+            function renderRequestDetails() {
+                const selectedRequest = requests.find((request) => request.requestId === selectedRequestId);
+                const detailSummary = document.getElementById('detailSummary');
+                const detailPrLink = document.getElementById('detailPrLink');
+                const detailMetaRow = document.getElementById('detailMetaRow');
+                const detailReason = document.getElementById('detailReason');
+
+                if (!selectedRequest) {
+                    detailSummary.textContent = 'No request selected';
+                    detailMetaRow.innerHTML = '';
+                    detailReason.textContent = 'Choose a request from the board to review it here.';
+                    detailPrLink.hidden = true;
+                    document.getElementById('reviewNoteInput').disabled = true;
+                    document.getElementById('approveButton').disabled = true;
+                    document.getElementById('rejectButton').disabled = true;
+                    document.getElementById('decisionNote').hidden = true;
+                    if (!mergePending) {
+                        document.getElementById('decisionStatus').hidden = true;
+                    }
+                    return;
+                }
+
+                // Clear any stale merge error when the selection changes, but keep the in-flight merging status
+                if (!mergePending) {
+                    document.getElementById('decisionStatus').hidden = true;
+                }
+
+                detailSummary.textContent = selectedRequest.summary;
+
+                if (selectedRequest.prUrl) {
+                    detailPrLink.href = selectedRequest.prUrl;
+                    detailPrLink.hidden = false;
+                } else {
+                    detailPrLink.hidden = true;
+                }
+
+                detailMetaRow.innerHTML = '';
+
+                const requesterText = document.createElement('span');
+                requesterText.textContent = 'Requester: ' + selectedRequest.requester;
+
+                const targetText = document.createElement('span');
+                targetText.textContent = 'Target: ' + selectedRequest.target;
+
+                const riskChip = document.createElement('span');
+                riskChip.className = 'chip chip-risk-' + selectedRequest.riskLevel.toLowerCase();
+                riskChip.textContent = 'Risk: ' + selectedRequest.riskLevel;
+
+                const statusChip = buildStatusChip(selectedRequest.status);
+
+                detailMetaRow.appendChild(requesterText);
+                detailMetaRow.appendChild(targetText);
+                detailMetaRow.appendChild(riskChip);
+                detailMetaRow.appendChild(statusChip);
+
+                detailReason.textContent = selectedRequest.reason;
+
+                const isPending = selectedRequest.status === 'pending';
+                document.getElementById('reviewNoteInput').disabled = !isPending;
+                document.getElementById('approveButton').disabled = !isPending;
+                document.getElementById('rejectButton').disabled = !isPending;
+
+                const decisionNote = document.getElementById('decisionNote');
+                if (isPending) {
+                    decisionNote.hidden = true;
+                } else {
+                    decisionNote.hidden = false;
+                    let decisionNoteText = 'This request was ' + selectedRequest.status + '.';
+                    if (selectedRequest.decidedBy) {
+                        decisionNoteText += ' Decided by ' + selectedRequest.decidedBy + ' at ' + formatAuditTimestamp(selectedRequest.decidedAt) + '.';
+                    }
+                    if (selectedRequest.reviewNote) {
+                        decisionNoteText += ' Note: ' + selectedRequest.reviewNote + '.';
+                    }
+                    decisionNoteText += ' Select another pending request to review it.';
+                    decisionNote.textContent = decisionNoteText;
+                }
+            }
+
+            /**
+             * Render the audit trail timeline
+             */
+            function renderAuditTimeline() {
+                const auditTimeline = document.getElementById('auditTimeline');
+                auditTimeline.innerHTML = '';
+
+                auditEntries.forEach((auditEntry) => {
+                    const auditEntryItem = document.createElement('li');
+                    auditEntryItem.className = 'audit-entry';
+
+                    const auditEntryMarker = document.createElement('span');
+                    auditEntryMarker.className = 'audit-entry-marker';
+
+                    const topRow = document.createElement('div');
+                    topRow.className = 'audit-entry-top-row';
+
+                    const actionChip = document.createElement('span');
+                    actionChip.className = 'chip chip-status-' + auditEntry.action;
+                    actionChip.textContent = auditEntry.action.charAt(0).toUpperCase() + auditEntry.action.slice(1);
+
+                    const auditEntrySummary = document.createElement('span');
+                    auditEntrySummary.textContent = auditEntry.summary;
+
+                    const auditEntryTime = document.createElement('span');
+                    auditEntryTime.className = 'audit-entry-time';
+                    auditEntryTime.textContent = auditEntry.time;
+
+                    topRow.appendChild(actionChip);
+                    topRow.appendChild(auditEntrySummary);
+                    topRow.appendChild(auditEntryTime);
+
+                    auditEntryItem.appendChild(auditEntryMarker);
+                    auditEntryItem.appendChild(topRow);
+
+                    if (auditEntry.note) {
+                        const auditEntryNote = document.createElement('div');
+                        auditEntryNote.className = 'audit-entry-note';
+                        auditEntryNote.textContent = 'Note: ' + auditEntry.note;
+                        auditEntryItem.appendChild(auditEntryNote);
+                    }
+
+                    auditTimeline.appendChild(auditEntryItem);
+                });
+            }
+
+            /**
+             * Build the status chip element for a request status
+             *
+             * @param requestStatus
+             */
+            function buildStatusChip(requestStatus) {
+                const statusChip = document.createElement('span');
+                statusChip.className = 'chip chip-status-' + requestStatus;
+                statusChip.textContent = requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1);
+                return statusChip;
+            }
+
+            /**
+             * Format a timestamp for the audit trail
+             *
+             * @param decisionTime
+             */
+            function formatTimestamp(decisionTime) {
+                return decisionTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' today';
+            }
+
+            /**
+             * Format a backend decidedAt value for display, falling back to a neutral label
+             *
+             * @param decidedAtValue
+             */
+            function formatAuditTimestamp(decidedAtValue) {
+                if (decidedAtValue === null || decidedAtValue === undefined) {
+                    return 'Unknown time';
+                }
+
+                const parsedDate = new Date(decidedAtValue);
+                if (Number.isNaN(parsedDate.getTime())) {
+                    return 'Unknown time';
+                }
+
+                return parsedDate.toLocaleString();
+            }
+
+            /**
+             * Show a transient inline status message below the app bar
+             *
+             * @param statusMessage
+             */
+            function showInlineStatus(statusMessage) {
+                const inlineStatusMessage = document.getElementById('inlineStatusMessage');
+                inlineStatusMessage.textContent = statusMessage;
+                inlineStatusMessage.hidden = false;
+
+                if (inlineStatusTimeout !== null) {
+                    clearTimeout(inlineStatusTimeout);
+                }
+
+                inlineStatusTimeout = setTimeout(() => {
+                    inlineStatusMessage.hidden = true;
+                    inlineStatusTimeout = null;
+                }, 6000);
+            }
+
+            /**
+             * On load
+             */
+            function initializePage() {
+                document.getElementById('approveButton').addEventListener('click', onApproveRequest);
+                document.getElementById('rejectButton').addEventListener('click', onRejectRequest);
+                document.getElementById('syncButton').addEventListener('click', onSyncButtonClick);
+
+                // Never open blank: seed the sample data first, then try to replace it with live backend data
+                requests = buildSampleRequests();
+                auditEntries = buildSampleAuditEntries();
+                milestones = buildSampleMilestones();
+                selectedRequestId = requests.length > 0 ? requests[0].requestId : null;
+
+                renderAll();
+                refreshFromBackend();
+            }
+
+            initializePage();
+        })();
+    </script>
+</body>
+</html>

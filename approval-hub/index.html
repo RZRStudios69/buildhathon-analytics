@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Approval Hub — Local-first approval workflows</title>
+<meta name="description" content="Approval Hub collects pending AI/agent actions and GitHub pull requests, gives you one screen to approve or reject, merges approved work locally, and keeps a complete audit trail.">
+<style>
+    :root {
+        --color-primary   : #0C0C09;
+        --color-secondary : #312C85;
+        --color-success   : #16A34A;
+        --color-warning   : #D97706;
+        --color-danger    : #DC2626;
+        --color-surface   : #F4F4F1;
+        --color-card      : #FFFFFF;
+        --color-text      : #0C0C09;
+        --color-text-2    : #52525B;
+        --color-border    : #E4E4E7;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+        margin      : 0;
+        background  : var(--color-surface);
+        color       : var(--color-text);
+        font-family : -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size   : 16px;
+        line-height : 1.6;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+        outline        : 2px solid var(--color-secondary);
+        outline-offset : 2px;
+    }
+
+    .wrap {
+        margin    : 0 auto;
+        max-width : 1100px;
+        padding   : 0 24px;
+    }
+
+    /* Top nav */
+    .nav {
+        background    : var(--color-card);
+        border-bottom : 1px solid var(--color-border);
+    }
+    .nav-inner {
+        align-items     : center;
+        display         : flex;
+        gap             : 32px;
+        justify-content : space-between;
+        min-height      : 64px;
+    }
+    .wordmark {
+        color          : var(--color-text);
+        font-size      : 18px;
+        font-weight    : 700;
+        text-decoration: none;
+    }
+    .nav-links {
+        align-items : center;
+        display     : flex;
+        gap         : 24px;
+    }
+    .nav-links a {
+        color          : var(--color-text-2);
+        font-size      : 14px;
+        font-weight    : 500;
+        text-decoration: none;
+    }
+    .nav-links a:hover { color: var(--color-text); }
+
+    .button {
+        border-radius  : 10px;
+        display        : inline-block;
+        font-size      : 14px;
+        font-weight    : 600;
+        padding        : 10px 20px;
+        text-decoration: none;
+    }
+    .button-dark {
+        background     : var(--color-primary);
+        border         : 1px solid var(--color-primary);
+        color          : var(--color-card);
+    }
+    .button-dark:hover { opacity: 0.85; }
+    .button-ghost {
+        background : transparent;
+        border     : 1px solid var(--color-border-strong, #A1A1AA);
+        color      : var(--color-text);
+    }
+    .button-ghost:hover { border-color: var(--color-primary); }
+
+    /* Hero */
+    .hero { padding: 64px 0 48px; }
+    .hero-grid {
+        align-items : center;
+        display     : grid;
+        gap         : 48px;
+        grid-template-columns: 1.05fr 0.95fr;
+    }
+    .hero h1 {
+        font-size    : 40px;
+        font-weight  : 700;
+        line-height  : 1.2;
+        margin       : 0 0 16px;
+    }
+    .hero p {
+        color    : var(--color-text-2);
+        font-size: 17px;
+        margin   : 0 0 32px;
+    }
+    .hero-actions {
+        display : flex;
+        gap     : 12px;
+        flex-wrap: wrap;
+    }
+    .hero-shot {
+        background : var(--color-card);
+        border     : 1px solid var(--color-border);
+        border-radius: 10px;
+        display    : block;
+        height     : auto;
+        width      : 100%;
+    }
+
+    /* Trust strip */
+    .trust {
+        color      : var(--color-text-2);
+        font-size  : 14px;
+        padding    : 8px 0 48px;
+        text-align : center;
+    }
+
+    /* Sections */
+    section { padding: 48px 0; }
+    .section-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 8px;
+    }
+    .section-sub {
+        color: var(--color-text-2);
+        margin: 0 0 32px;
+    }
+
+    /* Features */
+    .features-grid {
+        display   : grid;
+        gap       : 24px;
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .feature-card {
+        background  : var(--color-card);
+        border      : 1px solid var(--color-border);
+        border-radius: 10px;
+        padding     : 24px;
+    }
+    .feature-card svg {
+        display      : block;
+        margin-bottom: 16px;
+        stroke       : var(--color-secondary);
+    }
+    .feature-card h3 {
+        font-size: 17px;
+        margin   : 0 0 8px;
+    }
+    .feature-card p {
+        color  : var(--color-text-2);
+        font-size: 14px;
+        margin : 0;
+    }
+
+    /* How it works */
+    .steps {
+        display   : grid;
+        gap       : 24px;
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .step-num {
+        color        : var(--color-border-strong, #A1A1AA);
+        font-size    : 44px;
+        font-weight  : 700;
+        line-height  : 1;
+    }
+    .step h3 {
+        font-size: 16px;
+        margin   : 12px 0 8px;
+    }
+    .step p {
+        color    : var(--color-text-2);
+        font-size: 14px;
+        margin   : 0;
+    }
+
+    /* Screenshots */
+    .shot-frame {
+        background  : var(--color-card);
+        border      : 1px solid var(--color-border);
+        border-radius: 10px;
+        padding     : 16px;
+    }
+    .shot-frame img {
+        border-radius: 10px;
+        display   : block;
+        height    : auto;
+        width     : 100%;
+    }
+    .shot-caption {
+        color      : var(--color-text-2);
+        font-size  : 14px;
+        margin     : 12px 0 0;
+        text-align : center;
+    }
+
+    /* Footer */
+    footer {
+        border-top : 1px solid var(--color-border);
+        color      : var(--color-text-2);
+        font-size  : 14px;
+        padding    : 32px 0;
+    }
+    .footer-inner {
+        align-items : center;
+        display     : flex;
+        flex-wrap   : wrap;
+        gap         : 16px;
+        justify-content: space-between;
+    }
+    .footer-links {
+        display : flex;
+        gap     : 16px;
+    }
+    .footer-links a {
+        color          : var(--color-text-2);
+        text-decoration: none;
+    }
+    .footer-links a:hover { color: var(--color-text); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .hero-grid { grid-template-columns: 1fr; }
+        .hero-shot { order: 2; }
+        .features-grid { grid-template-columns: 1fr; }
+        .steps { grid-template-columns: 1fr; }
+        .nav-links a:not(.button) { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Main navigation">
+    <div class="wrap nav-inner">
+        <a class="wordmark" href="index.html">Approval Hub</a>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#screenshots">Screenshots</a>
+            <a href="#features">GitHub</a>
+            <a class="button button-dark" href="dashboard.html">Open dashboard</a>
+        </div>
+    </div>
+</nav>
+
+<main>
+    <section class="hero" aria-labelledby="hero-heading">
+        <div class="wrap hero-grid">
+            <div>
+                <h1 id="hero-heading">Approve what your agents do &mdash; before it happens.</h1>
+                <p>Approval Hub collects pending actions and pull requests from your repositories, gives you one calm screen to approve or reject, merges approved work locally, and keeps a complete audit trail. Nothing leaves your machine.</p>
+                <div class="hero-actions">
+                    <a class="button button-dark" href="dashboard.html">Open dashboard</a>
+                    <a class="button button-ghost" href="#how-it-works">See how it works</a>
+                </div>
+            </div>
+            <img class="hero-shot" src="assets/screenshot-dashboard.png" alt="Approval Hub dashboard showing stat cards, an analytics chart, a requests board, milestones and an audit trail" width="1400" height="900">
+        </div>
+    </section>
+
+    <p class="trust wrap">Runs on your machine &middot; Read-only GitHub access &middot; No account required</p>
+
+    <section id="features" aria-labelledby="features-heading">
+        <div class="wrap">
+            <h2 class="section-title" id="features-heading">Features</h2>
+            <p class="section-sub">Everything you need to review agent and pull-request activity in one place.</p>
+            <div class="features-grid">
+                <article class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="7" y1="13" x2="13" y2="13"/><line x1="7" y1="16" x2="10" y2="16"/></svg>
+                    <h3>One-screen reviews</h3>
+                    <p>The request board, request details and audit trail are stacked on a single page. Read the full context of every pending action without switching between tools.</p>
+                </article>
+                <article class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="12" r="3"/><path d="M8.5 7.5 L15.5 11"/><path d="M8.5 16.5 L15.5 13"/></svg>
+                    <h3>Local git merge</h3>
+                    <p>Approving a request merges the branch into a mirror clone on your machine. Nothing is pushed to any remote, so reviewed work stays entirely under your control.</p>
+                </article>
+                <article class="feature-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="13"/><line x1="22" y1="20" x2="22" y2="7"/><line x1="2" y1="20" x2="23" y2="20"/></svg>
+                    <h3>Milestones &amp; analytics</h3>
+                    <p>Track delivery with milestone progress bars, review decision activity over time and break requests down per repository, so trends are visible at a glance.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" aria-labelledby="how-heading">
+        <div class="wrap">
+            <h2 class="section-title" id="how-heading">How it works</h2>
+            <p class="section-sub">Four steps from raw repository activity to a fully audited decision.</p>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num" aria-hidden="true">1</div>
+                    <h3>Connect repositories</h3>
+                    <p>Point Approval Hub at your local mirror clones. It reads pending agent actions and open pull requests with read-only GitHub access.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num" aria-hidden="true">2</div>
+                    <h3>Review requests</h3>
+                    <p>Every pending action appears on one board with its title, repository, age and full audit context, ready for a calm, single-screen review.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num" aria-hidden="true">3</div>
+                    <h3>Approve or reject</h3>
+                    <p>Approving performs a local git merge into the mirror clone on your machine. Rejecting closes the request without any remote side effects.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num" aria-hidden="true">4</div>
+                    <h3>Audit everything</h3>
+                    <p>Each decision is recorded in a visible audit trail with timestamps, so your team can trace exactly what was approved, when and by whom.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="screenshots" aria-labelledby="screenshots-heading">
+        <div class="wrap">
+            <h2 class="section-title" id="screenshots-heading">Screenshots</h2>
+            <p class="section-sub">One calm screen for statistics, analytics, the request board, milestones and the audit trail.</p>
+            <figure class="shot-frame" style="margin:0;">
+                <img src="assets/screenshot-dashboard.png" alt="Full Approval Hub dashboard: five stat cards, an analytics chart with requests by repository, a requests board, milestone progress bars and an audit trail timeline" width="1400" height="900">
+                <figcaption class="shot-caption">The Approval Hub dashboard: statistics, analytics, requests board, milestones and audit trail on a single page.</figcaption>
+            </figure>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="wrap footer-inner">
+        <span>Approval Hub &mdash; local-first approval workflows. Sample data shown when the backend is offline.</span>
+        <div class="footer-links">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
